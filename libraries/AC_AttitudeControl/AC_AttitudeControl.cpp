@@ -1,7 +1,7 @@
 #include "AC_AttitudeControl.h"
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
-#include <../ArduPlane/Plane.h>
+
 #if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
  // default gains for Plane
  # define AC_ATTITUDE_CONTROL_INPUT_TC_DEFAULT  0.2f    // Soft
@@ -818,164 +818,32 @@ Vector3f AC_AttitudeControl::update_ang_vel_target_from_att_error(Vector3f attit
     return rate_target_ang_vel;
 }
 
-/**********************************************************************************s*/
-float AC_AttitudeControl::dob3_roll_2(float u,float y,float dt)
-{
-    float a=6.0f;
-    float b=200.0f;//34 17
-    float omega=12.0f;
-    static float ux0=0.0f;
-	static float ux1=0.0f;
-	ux0=ux0+dt*ux1;
-    ux1=ux1+dt*(-a*ux1+b*u);
-    //filter
-    static float x0=0.0f;
-    static float x1=0.0f;
-    static float x2=0.0f;
-    x0=x0+dt*x1;
-    x1=x1+dt*x2;
-    x2=x2+dt*(-(omega*omega*omega)*x0-(3.0f*omega*omega)*x1-(3.0f*omega)*x2+(y-ux0));
-    if(_motors.get_throttle()<0.0001f){
-        ux0=0.0f;
-		ux1=0.0f;
-        x0=0.0f;
-        x1=0.0f;
-        x2=0.0f;
-    }
-    float d_hat=(omega*omega*omega/b)*x2+(a*omega*omega*omega/b)*x1;
-    return d_hat;
-}
-float AC_AttitudeControl::dob3_roll_1(float u,float y,float dt)
-{
-
-	int g_dobr=plane.get_g_dobr();
-	float ub=(int)(g_dobr/1000);
-	float uomega=(int)(g_dobr%1000);
-	DataFlash_Class::instance()->Log_Write("gggr", "TimeUS,b1,omega1", "Qff",
-										   AP_HAL::micros64(),
-										   (double)ub,
-										   (double)uomega);
-    //float b=30.0f;
-    //float omega=12.0f;
-	float b=ub/10.0;//34 17
-    float omega=uomega/10.0;
-    static float ux0=0.0f;
-	ux0=ux0+dt*(b*u);
-    
-    //filter
-    static float x0=0.0f;
-    static float x1=0.0f;
-    static float x2=0.0f;
-    x0=x0+dt*x1;
-    x1=x1+dt*x2;
-    x2=x2+dt*(-(omega*omega*omega)*x0-(3.0f*omega*omega)*x1-(3.0f*omega)*x2+(y-ux0));
-    if(_motors.get_throttle()<0.0001f){
-        ux0=0.0f;
-        x0=0.0f;
-        x1=0.0f;
-        x2=0.0f;
-    }
-    float d_hat=(omega*omega*omega/b)*x1;
-    return d_hat;
-}
-
+// Run the roll angular velocity PID controller and return the output
 float AC_AttitudeControl::rate_target_to_motor_roll(float rate_actual_rads, float rate_target_rads)
 {
-	static float u_roll=0.0f;
+    float rate_error_rads = rate_target_rads - rate_actual_rads;
 
-	float rate_error_rads = rate_target_rads - rate_actual_rads;
+    // pass error to PID controller
+    get_rate_roll_pid().set_input_filter_d(rate_error_rads);
+    get_rate_roll_pid().set_desired_rate(rate_target_rads);
 
-	// pass error to PID controllerto_axis_angle
-	get_rate_roll_pid().set_input_filter_d(rate_error_rads);
-	get_rate_roll_pid().set_desired_rate(rate_target_rads);
+    float integrator = get_rate_roll_pid().get_integrator();
 
-	float integrator = get_rate_roll_pid().get_integrator();
-
-	// Ensure that integrator can only be reduced if the output is saturated
-	if (!_motors.limit.roll_pitch || ((is_positive(integrator) && is_negative(rate_error_rads)) || (is_negative(integrator) && is_positive(rate_error_rads)))) {
-	integrator = get_rate_roll_pid().get_i();
-	}
-
-	// Compute output in range -1 ~ +1
-	float dob_out=dob3_roll_1(u_roll,rate_actual_rads,_dt);
-	
-	float output = get_rate_roll_pid().get_p() + integrator + get_rate_roll_pid().get_d() + get_rate_roll_pid().get_ff(rate_target_rads)-dob_out;
-	//float output = get_rate_roll_pid().get_p() + integrator + get_rate_roll_pid().get_d() + get_rate_roll_pid().get_ff(rate_target_rads);
-	
-	// Constrain output
-	u_roll=constrain_float(output, -1.0f, 1.0f);
-	DataFlash_Class::instance()->Log_Write("DOBR", "TimeUS,dobout,uroll", "Qff",
-										   AP_HAL::micros64(),
-										   (double)dob_out,
-										   (double)u_roll);
-	return u_roll;
-}
-/***************************************************************************end*/
-
-/**********************************************************************************s*/
-float AC_AttitudeControl::dob3_pitch_2(float u,float y,float dt)
-{
-	float a=5.0f;
-    float b=190.0f;//34 17
-    float omega=12.0f;
-    static float ux0=0.0f;
-	static float ux1=0.0f;
-	ux0=ux0+dt*ux1;
-    ux1=ux1+dt*(-a*ux1+b*u);
-    //filter
-    static float x0=0.0f;
-    static float x1=0.0f;
-    static float x2=0.0f;
-    x0=x0+dt*x1;
-    x1=x1+dt*x2;
-    x2=x2+dt*(-(omega*omega*omega)*x0-(3.0f*omega*omega)*x1-(3.0f*omega)*x2+(y-ux0));
-    if(_motors.get_throttle()<0.0001f){
-        ux0=0.0f;
-		ux1=0.0f;
-        x0=0.0f;
-        x1=0.0f;
-        x2=0.0f;
+    // Ensure that integrator can only be reduced if the output is saturated
+    if (!_motors.limit.roll_pitch || ((is_positive(integrator) && is_negative(rate_error_rads)) || (is_negative(integrator) && is_positive(rate_error_rads)))) {
+        integrator = get_rate_roll_pid().get_i();
     }
-    //float d_hat=(omega*omega*omega/b)*x1;
-	float d_hat=(omega*omega*omega/b)*x2+(a*omega*omega*omega/b)*x1;
-    return d_hat;
+
+    // Compute output in range -1 ~ +1
+    float output = get_rate_roll_pid().get_p() + integrator + get_rate_roll_pid().get_d() + get_rate_roll_pid().get_ff(rate_target_rads);
+
+    // Constrain output
+    return constrain_float(output, -1.0f, 1.0f);
 }
-float AC_AttitudeControl::dob3_pitch_1(float u,float y,float dt)
-{
-	//printf("\n\n\n\n\nR=%d,P=%d\n",plane.get_g_dobr(),plane.get_g_dobp());
-	int g_dobp=plane.get_g_dobp();
-	float ub=(int)(g_dobp/1000);
-	float uomega=(int)(g_dobp%1000);
-	DataFlash_Class::instance()->Log_Write("gggp", "TimeUS,b1,omega1", "Qff",
-										   AP_HAL::micros64(),
-										   (double)ub,
-										   (double)uomega);
-    //float b=30.0f;//34 17
-    //float omega=12.0f;
-	float b=ub/10.0;//34 17
-    float omega=uomega/10.0;
-    static float ux0=0.0f;
-	ux0=ux0+dt*(b*u);
-    
-    //filter
-    static float x0=0.0f;
-    static float x1=0.0f;
-    static float x2=0.0f;
-    x0=x0+dt*x1;
-    x1=x1+dt*x2;
-    x2=x2+dt*(-(omega*omega*omega)*x0-(3.0f*omega*omega)*x1-(3.0f*omega)*x2+(y-ux0));
-    if(_motors.get_throttle()<0.0001f){
-        ux0=0.0f;
-        x0=0.0f;
-        x1=0.0f;
-        x2=0.0f;
-    }
-    float d_hat=(omega*omega*omega/b)*x1;
-    return d_hat;
-}
+
+// Run the pitch angular velocity PID controller and return the output
 float AC_AttitudeControl::rate_target_to_motor_pitch(float rate_actual_rads, float rate_target_rads)
 {
-	static float u_pitch=0.0f;
     float rate_error_rads = rate_target_rads - rate_actual_rads;
 
     // pass error to PID controller
@@ -990,18 +858,11 @@ float AC_AttitudeControl::rate_target_to_motor_pitch(float rate_actual_rads, flo
     }
 
     // Compute output in range -1 ~ +1
-	float dob_out=dob3_pitch_1(u_pitch,rate_actual_rads,_dt);
-    float output = get_rate_pitch_pid().get_p() + integrator + get_rate_pitch_pid().get_d() + get_rate_pitch_pid().get_ff(rate_target_rads)-dob_out;
+    float output = get_rate_pitch_pid().get_p() + integrator + get_rate_pitch_pid().get_d() + get_rate_pitch_pid().get_ff(rate_target_rads);
 
     // Constrain output
-    u_pitch = constrain_float(output, -1.0f, 1.0f);
-	DataFlash_Class::instance()->Log_Write("DOBP", "TimeUS,dobout,upitch", "Qff",
-										   AP_HAL::micros64(),
-										   (double)dob_out,
-										   (double)u_pitch);
-	return u_pitch;
+    return constrain_float(output, -1.0f, 1.0f);
 }
-/***************************************************************************end*/
 
 // Run the yaw angular velocity PID controller and return the output
 float AC_AttitudeControl::rate_target_to_motor_yaw(float rate_actual_rads, float rate_target_rads)

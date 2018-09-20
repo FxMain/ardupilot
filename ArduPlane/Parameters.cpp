@@ -1094,20 +1094,7 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: ../libraries/AP_OSD/AP_OSD.cpp
     GOBJECT(osd, "OSD", AP_OSD),
 #endif
-	
-/***********************************************************************************s*/
-	// @Param: dobr
-    // @DisplayName: dob roll 参数调试
-    // @Description: 6位数十进制，高3位b,低3位时Omega,有一位小数位 如 101202 b=10.1 omega=20.2 ,11002 b=1.1 omega=0.2
-    // @User: Advanced
-	GSCALAR(dobr, "dobr",  30012),
-	
-	// @Param: dobp
-    // @DisplayName: dob pitch 参数调试
-    // @Description: 6位数十进制，高3位b,低3位时Omega,有一位小数位 如 101202 b=10.1 omega=20.2 ,11002 b=1.1 omega=0.2
-    // @User: Advanced
-	GSCALAR(dobp, "dobp",  30012),
-/**********************************************************************************end*/	
+    
     AP_VAREND
 };
 

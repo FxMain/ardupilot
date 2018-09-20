@@ -158,10 +158,7 @@ public:
     // HAL::Callbacks implementation.
     void setup() override;
     void loop() override;
-/****************************************************S*/	
-	int get_g_dobr(){return g.dobr;};
-	int get_g_dobp(){return g.dobp;};
-/****************************************************end*/
+
 private:
 
     // key aircraft parameters passed to multiple libraries

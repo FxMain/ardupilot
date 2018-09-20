@@ -66,15 +66,7 @@ public:
 
     // Empty destructor to suppress compiler warning
     virtual ~AC_AttitudeControl() {}
-/************************************************************S*/
-	//DOB
-	
-    float dob3_roll_1(float u,float y,float dt);
-	float dob3_pitch_1(float u,float y,float dt);
-	
-	float dob3_roll_2(float u,float y,float dt);
-	float dob3_pitch_2(float u,float y,float dt);
-/************************************************************end*/
+
     // pid accessors
     AC_P& get_angle_roll_p() { return _p_angle_roll; }
     AC_P& get_angle_pitch_p() { return _p_angle_pitch; }
