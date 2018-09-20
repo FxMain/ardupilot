@@ -974,7 +974,7 @@ const AP_Param::Info Plane::var_info[] = {
     // @Group: RCMAP_
     // @Path: ../libraries/AP_RCMapper/AP_RCMapper.cpp
     GOBJECT(rcmap,                "RCMAP_",         RCMapper),
-
+	///
     // @Group: SR0_
     // @Path: GCS_Mavlink.cpp
     GOBJECTN(_gcs._chan[0], gcs0,        "SR0_",     GCS_MAVLINK),
