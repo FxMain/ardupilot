@@ -781,7 +781,7 @@ private:
     ftype accNavMagHoriz;           // magnitude of navigation accel in horizontal plane (m/s^2)
     Vector3f earthRateNED;          // earths angular rate vector in NED (rad/s)
     ftype dtIMUavg;                 // expected time between IMU measurements (sec)
-    ftype dtEkfAvg;                 // expected time between EKF updates (sec)
+    ftype dtEkfAvg;                 // expected time between EKF updates (sec)预期时间EKF更新(sec)
     ftype dt;                       // time lapsed since the last covariance prediction (sec)
     ftype hgtRate;                  // state for rate of change of height filter
     bool onGround;                  // true when the flight vehicle is definitely on the ground

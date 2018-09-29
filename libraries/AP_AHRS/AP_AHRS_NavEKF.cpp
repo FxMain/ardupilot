@@ -117,7 +117,7 @@ void AP_AHRS_NavEKF::update(bool skip_ins_update)
     AP_Module::call_hook_AHRS_update(*this);
 #endif
 
-    // push gyros if optical flow present
+    // push gyros if optical flow present 如果有光流，推动陀螺
     if (hal.opticalflow) {
         const Vector3f &exported_gyro_bias = get_gyro_drift();
         hal.opticalflow->push_gyro_bias(exported_gyro_bias.x, exported_gyro_bias.y);
@@ -134,6 +134,10 @@ void AP_AHRS_NavEKF::update_DCM(bool skip_ins_update)
     // we need to restore the old DCM attitude values as these are
     // used internally in DCM to calculate error values for gyro drift
     // correction
+	
+	//我们需要恢复原来的DCM态度值
+	// DCM内部用于计算陀螺漂移的误差值
+	//回调
     roll = _dcm_attitude.x;
     pitch = _dcm_attitude.y;
     yaw = _dcm_attitude.z;
@@ -172,18 +176,21 @@ void AP_AHRS_NavEKF::update_EKF2(void)
             update_cd_values();
             update_trig();
 
-            // Use the primary EKF to select the primary gyro
+            // Use the primary EKF to select the primary gyro //使用主EKF选择主陀螺仪
             const int8_t primary_imu = EKF2.getPrimaryCoreIMUIndex();
 
             const AP_InertialSensor &_ins = AP::ins();
 
             // get gyro bias for primary EKF and change sign to give gyro drift
             // Note sign convention used by EKF is bias = measurement - truth
+			//获得主EKF的陀螺偏压，改变信号得到陀螺漂移
+			//注意EKF使用的符号约定是偏差=测量-真实
+
             _gyro_drift.zero();
             EKF2.getGyroBias(-1,_gyro_drift);
             _gyro_drift = -_gyro_drift;
 
-            // calculate corrected gyro estimate for get_gyro()
+            // calculate corrected gyro estimate for get_gyro() 计算校正后的陀螺估计
             _gyro_estimate.zero();
             if (primary_imu == -1) {
                 // the primary IMU is undefined so use an uncorrected default value from the INS library
@@ -194,6 +201,7 @@ void AP_AHRS_NavEKF::update_EKF2(void)
             }
 
             // get z accel bias estimate from active EKF (this is usually for the primary IMU)
+            //从活跃的EKF中得到z accel偏置估计(这通常用于主要的IMU)
             float abias = 0;
             EKF2.getAccelZBias(-1,abias);
 

@@ -604,6 +604,8 @@ void RangeFinder::init(void)
 /*
   update RangeFinder state for all instances. This should be called at
   around 10Hz by main loop
+  更新所有实例的RangeFinder状态。这应该被称为
+  主回路大约10Hz
  */
 void RangeFinder::update(void)
 {

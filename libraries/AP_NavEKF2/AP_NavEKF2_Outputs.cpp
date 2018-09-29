@@ -508,7 +508,7 @@ void  NavEKF2_core::getFilterTimeouts(uint8_t &timeouts) const
                 tasTimeout<<4);
 }
 
-// Return the navigation filter status message
+// Return the navigation filter status message//返回导航筛选器状态消息
 void  NavEKF2_core::getFilterStatus(nav_filter_status &status) const
 {
     status = filterStatus;
