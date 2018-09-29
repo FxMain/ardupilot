@@ -142,6 +142,29 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
     // @User: Standard
     AP_GROUPINFO("INPUT_TC", 20, AC_AttitudeControl, _input_tc, AC_ATTITUDE_CONTROL_INPUT_TC_DEFAULT),
+	
+	// @Param: dob2_pa
+    // @DisplayName: Attitude control input time constant (aka smoothing)
+    // @Description: Attitude control input time constant.  Low numbers lead to sharper response, higher numbers to softer response
+    // @Units: s
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
+    // @User: Standard
+	
+    AP_GROUPINFO("dob2_pa", 21, AC_AttitudeControl, dob2_pa, 11), //二阶模型
+	AP_GROUPINFO("dob2_pb", 22, AC_AttitudeControl, dob2_pb, 700),
+	AP_GROUPINFO("dob2_po", 23, AC_AttitudeControl, dob2_po, 7),
+	
+	AP_GROUPINFO("dob2_ra", 24, AC_AttitudeControl, dob2_ra, 11.01),
+	AP_GROUPINFO("dob2_rb", 25, AC_AttitudeControl, dob2_rb, 540.01),
+	AP_GROUPINFO("dob2_ro", 26, AC_AttitudeControl, dob2_ro, 13.01),
+	
+	AP_GROUPINFO("dob1_pb", 27, AC_AttitudeControl, dob1_pb, 30.0), //一阶模型
+	AP_GROUPINFO("dob1_po", 28, AC_AttitudeControl, dob1_po, 12.0),
+	AP_GROUPINFO("dob1_rb", 29, AC_AttitudeControl, dob1_rb, 30.01),
+	AP_GROUPINFO("dob1_ro", 30, AC_AttitudeControl, dob1_ro, 12.01),
+	
 
     AP_GROUPEND
 };
@@ -821,9 +844,15 @@ Vector3f AC_AttitudeControl::update_ang_vel_target_from_att_error(Vector3f attit
 /**********************************************************************************s*/
 float AC_AttitudeControl::dob3_roll_2(float u,float y,float dt)
 {
-    float a=6.0f;
-    float b=200.0f;//34 17
-    float omega=12.0f;
+	
+    float a=dob2_ra;
+    float b=dob2_rb;//34 17
+    float omega=dob2_ro;
+	DataFlash_Class::instance()->Log_Write("do2r", "TimeUS,a,b,omega", "Qfff",
+										   AP_HAL::micros64(),
+										   (double)a,
+										   (double)b,
+										   (double)omega);
     static float ux0=0.0f;
 	static float ux1=0.0f;
 	ux0=ux0+dt*ux1;
@@ -848,7 +877,7 @@ float AC_AttitudeControl::dob3_roll_2(float u,float y,float dt)
 float AC_AttitudeControl::dob3_roll_1(float u,float y,float dt)
 {
 
-	int g_dobr=plane.get_g_dobr();
+	/*int g_dobr=plane.get_g_dobr();
 	float ub=(int)(g_dobr/1000);
 	float uomega=(int)(g_dobr%1000);
 	DataFlash_Class::instance()->Log_Write("gggr", "TimeUS,b1,omega1", "Qff",
@@ -858,7 +887,16 @@ float AC_AttitudeControl::dob3_roll_1(float u,float y,float dt)
     //float b=30.0f;
     //float omega=12.0f;
 	float b=ub/10.0;//34 17
-    float omega=uomega/10.0;
+    float omega=uomega/10.0;*/
+	
+	float b		=dob1_rb;
+	float omega	=dob1_ro;
+	DataFlash_Class::instance()->Log_Write("do1r", "TimeUS,b,omega", "Qff",
+										   AP_HAL::micros64(),
+										   (double)b,
+										   (double)omega);
+	
+	
     static float ux0=0.0f;
 	ux0=ux0+dt*(b*u);
     
@@ -897,7 +935,7 @@ float AC_AttitudeControl::rate_target_to_motor_roll(float rate_actual_rads, floa
 	}
 
 	// Compute output in range -1 ~ +1
-	float dob_out=dob3_roll_1(u_roll,rate_actual_rads,_dt);
+	float dob_out=dob3_roll_2(u_roll,rate_actual_rads,_dt);
 	
 	float output = get_rate_roll_pid().get_p() + integrator + get_rate_roll_pid().get_d() + get_rate_roll_pid().get_ff(rate_target_rads)-dob_out;
 	//float output = get_rate_roll_pid().get_p() + integrator + get_rate_roll_pid().get_d() + get_rate_roll_pid().get_ff(rate_target_rads);
@@ -915,9 +953,16 @@ float AC_AttitudeControl::rate_target_to_motor_roll(float rate_actual_rads, floa
 /**********************************************************************************s*/
 float AC_AttitudeControl::dob3_pitch_2(float u,float y,float dt)
 {
-	float a=5.0f;
-    float b=190.0f;//34 17
-    float omega=12.0f;
+	
+	float a=dob2_pa;
+    float b=dob2_pb;//34 17
+    float omega=dob2_po;
+	DataFlash_Class::instance()->Log_Write("do2p", "TimeUS,a,b,omega", "Qfff",
+										   AP_HAL::micros64(),
+										   (double)a,
+										   (double)b,
+										   (double)omega);
+	
     static float ux0=0.0f;
 	static float ux1=0.0f;
 	ux0=ux0+dt*ux1;
@@ -942,18 +987,14 @@ float AC_AttitudeControl::dob3_pitch_2(float u,float y,float dt)
 }
 float AC_AttitudeControl::dob3_pitch_1(float u,float y,float dt)
 {
-	//printf("\n\n\n\n\nR=%d,P=%d\n",plane.get_g_dobr(),plane.get_g_dobp());
-	int g_dobp=plane.get_g_dobp();
-	float ub=(int)(g_dobp/1000);
-	float uomega=(int)(g_dobp%1000);
-	DataFlash_Class::instance()->Log_Write("gggp", "TimeUS,b1,omega1", "Qff",
+
+	float b		=dob1_pb;
+	float omega	=dob1_po;
+	
+	DataFlash_Class::instance()->Log_Write("do1p", "TimeUS,b,omega", "Qff",
 										   AP_HAL::micros64(),
-										   (double)ub,
-										   (double)uomega);
-    //float b=30.0f;//34 17
-    //float omega=12.0f;
-	float b=ub/10.0;//34 17
-    float omega=uomega/10.0;
+										   (double)b,
+										   (double)omega);
     static float ux0=0.0f;
 	ux0=ux0+dt*(b*u);
     

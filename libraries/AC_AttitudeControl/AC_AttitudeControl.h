@@ -74,6 +74,21 @@ public:
 	
 	float dob3_roll_2(float u,float y,float dt);
 	float dob3_pitch_2(float u,float y,float dt);
+
+	//DOB地面站参数
+	//二阶模型
+	AP_Float dob2_pa;
+	AP_Float dob2_pb;
+	AP_Float dob2_po;
+	AP_Float dob2_ra;
+	AP_Float dob2_rb;
+	AP_Float dob2_ro;
+	
+	//一阶模型
+	AP_Float dob1_pb;
+	AP_Float dob1_po;
+	AP_Float dob1_rb;
+	AP_Float dob1_ro;
 /************************************************************end*/
     // pid accessors
     AC_P& get_angle_roll_p() { return _p_angle_roll; }

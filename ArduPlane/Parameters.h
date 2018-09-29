@@ -344,10 +344,6 @@ public:
 
         k_param_DataFlash = 253, // Logging Group
 		
-/****************************************s*/
-		k_param_dobr = 254,
-		k_param_dobp = 255,
-/****************************************end*/
         // 254,255: reserved
     };
 
@@ -498,10 +494,7 @@ public:
     AP_Int16 gcs_pid_mask;
     AP_Int8 parachute_channel;
 
-/***************************************s*/
-	AP_Int32 dobr;//
-	AP_Int32 dobp;//
-/***************************************end*/
+
 	
 };
 
